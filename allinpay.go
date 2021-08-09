@@ -63,10 +63,6 @@ func NewAllInPayClient(config Config) *Client {
 			},
 		},
 	}
-
-	//环境	HTTPS请求地址
-	//测试环境	http://test.allinpay.com/op/gateway
-	//正式环境	https://cloud.allinpay.com/gateway
 	serviceUrl := "http://test.allinpay.com/op/gateway"
 	if config.IsProd {
 		serviceUrl = "https://cloud.allinpay.com/gateway"
@@ -92,7 +88,7 @@ var httpClient *http.Client
 func (s *Client) Request(method string, content map[string]string) (data interface{}, err error) {
 	paramsBbytes, err := json.Marshal(content)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	params := map[string]string{}
 	params["appId"] = s.appID
@@ -100,7 +96,6 @@ func (s *Client) Request(method string, content map[string]string) (data interfa
 	params["charset"] = "utf-8"
 	params["format"] = "JSON"
 	params["timestamp"] = time.Now().Format("2006-01-02 15:04:05")
-	//params["timestamp"] = "2021-08-09 11:19:10"
 	params["version"] = s.version
 	params["bizContent"] = string(paramsBbytes)
 	sign, err := s.sign(params)
@@ -150,7 +145,7 @@ func (s *Client) Request(method string, content map[string]string) (data interfa
 	delete(result, "sign")
 	err = s.verifyResult(string(resultJsonStr), verifySign.(string))
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 	return result, nil
 }
@@ -234,10 +229,14 @@ func (s *Client) getPrivateKey(privateKeyName, privatePassword string) (*rsa.Pri
 		return nil, err
 	}
 	if len(blocks) != 2 {
-		return nil, errors.New("解密错误")
+		return nil, errors.New("kcs12.ToPEM error")
+	}
+	var der = blocks[0].Bytes
+	if strings.EqualFold(blocks[1].Type, "PRIVATE KEY") {
+		der = blocks[1].Bytes
 	}
 	// 拿到第一个block，用x509解析出私钥（当然公钥也是可以的）
-	privateKey, err := x509.ParsePKCS1PrivateKey(blocks[0].Bytes)
+	privateKey, err := x509.ParsePKCS1PrivateKey(der)
 	if err != nil {
 		return nil, err
 	}

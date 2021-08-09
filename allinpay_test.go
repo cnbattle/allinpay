@@ -7,11 +7,11 @@ import (
 
 func TestNewAliInPayClient(t *testing.T) {
 	client := NewAllInPayClient(Config{
-		AppID:        "xxx",
-		AppSecretKey: "xxx",
+		AppID:        "10000",
+		AppSecretKey: "xxxxxxxxxxxxxxxxxxxxxxxx",
 		AppAccountID: "40000",
-		PfxPath:      "./1581648210684.pfx",
-		TLCert:       "./TLCert-test.cer",
+		PfxPath:      "./tests/user-rsa.pfx",
+		TLCert:       "./tests/public-rsa.cer",
 		PfxPwd:       "123456",
 		IsProd:       false,
 	})
