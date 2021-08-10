@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/cnbattle/allinpay/utils"
 	"io"
 	"io/ioutil"
 	"log"
@@ -24,6 +23,8 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/cnbattle/allinpay/utils"
 
 	"golang.org/x/crypto/pkcs12"
 )
@@ -192,7 +193,7 @@ func (s *Client) sign(params map[string]string) (string, error) {
 
 // EncryptionSI RSA加密敏感信息
 func (s *Client) EncryptionSI(information string) (string, error) {
-	key, err := utils.AESSHA1PRNG([]byte(s.AppSecretKey), 128)
+	key, err := utils.AesSha1PRNG([]byte(s.AppSecretKey), 128)
 	if err != nil {
 		return "", fmt.Errorf("%v: [%w]", err.Error(), EncryptionSIError)
 	}

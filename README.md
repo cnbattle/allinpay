@@ -20,7 +20,7 @@ func main() {
 		PfxPwd:       "123456",
 		IsProd:       false,
 	})
-	params := map[string]string{}
+	params := map[string]interface{}{}
 	params["bizUserId"] = "golang-test-1"
 	params["memberType"] = "3"
 	params["source"] = "1"
