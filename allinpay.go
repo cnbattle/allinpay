@@ -38,12 +38,12 @@ type Config struct {
 }
 
 type Client struct {
-	appID        string
-	appSecretKey string
-	appAccountID string
-	pfxPath      string
-	tlCert       string
-	pfxPwd       string
+	AppID        string
+	AppSecretKey string
+	AppAccountID string
+	PfxPath      string
+	TLCert       string
+	PfxPwd       string
 	serviceUrl   string
 	version      string
 }
@@ -72,12 +72,12 @@ func NewAllInPayClient(config Config) *Client {
 	}
 
 	return &Client{
-		appID:        config.AppID,
-		appSecretKey: config.AppSecretKey,
-		appAccountID: config.AppAccountID,
-		pfxPath:      config.PfxPath,
-		pfxPwd:       config.PfxPwd,
-		tlCert:       config.TLCert,
+		AppID:        config.AppID,
+		AppSecretKey: config.AppSecretKey,
+		AppAccountID: config.AppAccountID,
+		PfxPath:      config.PfxPath,
+		PfxPwd:       config.PfxPwd,
+		TLCert:       config.TLCert,
 		serviceUrl:   serviceUrl,
 		version:      config.Version,
 	}
@@ -91,7 +91,7 @@ func (s *Client) Request(method string, content map[string]string) (data string,
 		return "", err
 	}
 	params := map[string]string{}
-	params["appId"] = s.appID
+	params["appId"] = s.AppID
 	params["method"] = method
 	params["charset"] = "utf-8"
 	params["format"] = "JSON"
@@ -172,7 +172,7 @@ func (s *Client) sign(params map[string]string) (string, error) {
 	h := md5.New()
 	h.Write([]byte(buf.String())[:buf.Len()-1])
 	sb := base64.StdEncoding.EncodeToString(h.Sum(nil))
-	privateKey, err := s.getPrivateKey(s.pfxPath, s.pfxPwd)
+	privateKey, err := s.getPrivateKey(s.PfxPath, s.PfxPwd)
 	if err != nil {
 		return "", err
 	}
@@ -195,7 +195,7 @@ func (s *Client) verifyResult(jsonStr, sign string) error {
 	h := md5.New()
 	h.Write([]byte(jsonStr))
 	sb := base64.StdEncoding.EncodeToString(h.Sum(nil))
-	caCert, err := ioutil.ReadFile(s.tlCert)
+	caCert, err := ioutil.ReadFile(s.TLCert)
 	if err != nil {
 		return err
 	}
