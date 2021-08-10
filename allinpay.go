@@ -89,7 +89,7 @@ func NewAllInPayClient(config Config) *Client {
 
 var httpClient *http.Client
 
-func (s *Client) Request(method string, content map[string]string) (data string, err error) {
+func (s *Client) Request(method string, content map[string]interface{}) (data string, err error) {
 	paramsBytes, err := json.Marshal(content)
 	if err != nil {
 		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
