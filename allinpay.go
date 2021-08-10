@@ -12,7 +12,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
-	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -86,9 +86,9 @@ func NewAllInPayClient(config Config) *Client {
 var httpClient *http.Client
 
 func (s *Client) Request(method string, content map[string]string) (data string, err error) {
-	paramsBbytes, err := json.Marshal(content)
+	paramsBytes, err := json.Marshal(content)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
 	params := map[string]string{}
 	params["appId"] = s.AppID
@@ -97,10 +97,10 @@ func (s *Client) Request(method string, content map[string]string) (data string,
 	params["format"] = "JSON"
 	params["timestamp"] = time.Now().Format("2006-01-02 15:04:05")
 	params["version"] = s.version
-	params["bizContent"] = string(paramsBbytes)
+	params["bizContent"] = string(paramsBytes)
 	sign, err := s.sign(params)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
 	params["sign"] = sign
 	params["signType"] = "SHA256WithRSA"
@@ -119,7 +119,7 @@ func (s *Client) Request(method string, content map[string]string) (data string,
 	resp, err := httpClient.Post(s.serviceUrl, "application/x-www-form-urlencoded;charset=utf-8",
 		bytes.NewBuffer([]byte(u.Encode())))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -129,12 +129,12 @@ func (s *Client) Request(method string, content map[string]string) (data string,
 	}(resp.Body)
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
 	result := map[string]interface{}{}
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
 	verifySign := result["sign"]
 	delete(result, "sign")
@@ -145,7 +145,7 @@ func (s *Client) Request(method string, content map[string]string) (data string,
 	delete(result, "sign")
 	err = s.verifyResult(string(resultJsonStr), verifySign.(string))
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
 	return string(body), nil
 }
@@ -174,14 +174,14 @@ func (s *Client) sign(params map[string]string) (string, error) {
 	sb := base64.StdEncoding.EncodeToString(h.Sum(nil))
 	privateKey, err := s.getPrivateKey(s.PfxPath, s.PfxPwd)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%v: [%w]", err.Error(), SignError)
 	}
 	shaNew := sha256.New()
 	shaNew.Write([]byte(sb))
 	hashed := shaNew.Sum(nil)
 	signature, err := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA256, hashed)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("%v: [%w]", err.Error(), SignError)
 	}
 	return base64.StdEncoding.EncodeToString(signature), nil
 }
@@ -190,46 +190,46 @@ func (s *Client) sign(params map[string]string) (string, error) {
 func (s *Client) verifyResult(jsonStr, sign string) error {
 	encodingSign, err := base64.StdEncoding.DecodeString(sign)
 	if err != nil {
-		return err
+		return fmt.Errorf("%v: [%w]", err.Error(), VerifyResultError)
 	}
 	h := md5.New()
 	h.Write([]byte(jsonStr))
 	sb := base64.StdEncoding.EncodeToString(h.Sum(nil))
 	caCert, err := ioutil.ReadFile(s.TLCert)
 	if err != nil {
-		return err
+		return fmt.Errorf("%v: [%w]", err.Error(), VerifyResultError)
 	}
 	block, _ := pem.Decode(caCert)
 	var cert *x509.Certificate
 	cert, err = x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return err
+		return fmt.Errorf("%v: [%w]", err.Error(), VerifyResultError)
 	}
 	rsaPublicKey := cert.PublicKey.(*rsa.PublicKey)
 	shaNew := sha256.New()
 	shaNew.Write([]byte(sb))
 	sum := shaNew.Sum(nil)
 	err = rsa.VerifyPKCS1v15(rsaPublicKey, crypto.SHA256, sum, encodingSign)
-	return err
+	return fmt.Errorf("%v: [%w]", err.Error(), VerifyResultError)
 }
 
 // getPrivateKey 获取私钥
 func (s *Client) getPrivateKey(privateKeyName, privatePassword string) (*rsa.PrivateKey, error) {
 	f, err := os.Open(privateKeyName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%v: [%w]", err.Error(), GetPrivateKeyError)
 	}
 	privateKeyBytes, err := ioutil.ReadAll(f)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%v: [%w]", err.Error(), GetPrivateKeyError)
 	}
 	// 因为pfx证书公钥和密钥是成对的，所以要先转成pem.Block
 	blocks, err := pkcs12.ToPEM(privateKeyBytes, privatePassword)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%v: [%w]", err.Error(), GetPrivateKeyError)
 	}
 	if len(blocks) != 2 {
-		return nil, errors.New("kcs12.ToPEM error")
+		return nil, fmt.Errorf("kcs12.ToPEM error: [%w]", GetPrivateKeyError)
 	}
 	var der = blocks[0].Bytes
 	if strings.EqualFold(blocks[1].Type, "PRIVATE KEY") {
@@ -238,7 +238,7 @@ func (s *Client) getPrivateKey(privateKeyName, privatePassword string) (*rsa.Pri
 	// 拿到第一个block，用x509解析出私钥（当然公钥也是可以的）
 	privateKey, err := x509.ParsePKCS1PrivateKey(der)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%v: [%w]", err.Error(), GetPrivateKeyError)
 	}
 	return privateKey, nil
 }
