@@ -85,10 +85,10 @@ func NewAllInPayClient(config Config) *Client {
 
 var httpClient *http.Client
 
-func (s *Client) Request(method string, content map[string]string) (data map[string]interface{}, err error) {
+func (s *Client) Request(method string, content map[string]string) (data string, err error) {
 	paramsBbytes, err := json.Marshal(content)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	params := map[string]string{}
 	params["appId"] = s.appID
@@ -100,7 +100,7 @@ func (s *Client) Request(method string, content map[string]string) (data map[str
 	params["bizContent"] = string(paramsBbytes)
 	sign, err := s.sign(params)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	params["sign"] = sign
 	params["signType"] = "SHA256WithRSA"
@@ -119,7 +119,7 @@ func (s *Client) Request(method string, content map[string]string) (data map[str
 	resp, err := httpClient.Post(s.serviceUrl, "application/x-www-form-urlencoded;charset=utf-8",
 		bytes.NewBuffer([]byte(u.Encode())))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -129,12 +129,12 @@ func (s *Client) Request(method string, content map[string]string) (data map[str
 	}(resp.Body)
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	result := map[string]interface{}{}
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	verifySign := result["sign"]
 	delete(result, "sign")
@@ -145,9 +145,9 @@ func (s *Client) Request(method string, content map[string]string) (data map[str
 	delete(result, "sign")
 	err = s.verifyResult(string(resultJsonStr), verifySign.(string))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	return result, nil
+	return string(body), nil
 }
 
 // sign 签名
