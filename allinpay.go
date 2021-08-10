@@ -10,9 +10,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"github.com/cnbattle/allinpay/utils"
 	"io"
 	"io/ioutil"
 	"log"
@@ -49,19 +51,21 @@ type Client struct {
 }
 
 func NewAllInPayClient(config Config) *Client {
-	caCert, err := ioutil.ReadFile(config.TLCert)
-	if err != nil {
-		log.Fatal(err)
-	}
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
-	httpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs:            caCertPool,
-				InsecureSkipVerify: true,
+	if len(config.TLCert) > 0 {
+		caCert, err := ioutil.ReadFile(config.TLCert)
+		if err != nil {
+			log.Fatal(err)
+		}
+		caCertPool := x509.NewCertPool()
+		caCertPool.AppendCertsFromPEM(caCert)
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					RootCAs:            caCertPool,
+					InsecureSkipVerify: true,
+				},
 			},
-		},
+		}
 	}
 	serviceUrl := "http://test.allinpay.com/op/gateway"
 	if config.IsProd {
@@ -184,6 +188,16 @@ func (s *Client) sign(params map[string]string) (string, error) {
 		return "", fmt.Errorf("%v: [%w]", err.Error(), SignError)
 	}
 	return base64.StdEncoding.EncodeToString(signature), nil
+}
+
+// EncryptionSI RSA加密敏感信息
+func (s *Client) EncryptionSI(information string) (string, error) {
+	key, err := utils.AESSHA1PRNG([]byte(s.AppSecretKey), 128)
+	if err != nil {
+		return "", fmt.Errorf("%v: [%w]", err.Error(), EncryptionSIError)
+	}
+	encrypt := utils.EcbEncrypt([]byte(information), key)
+	return strings.ToUpper(hex.EncodeToString(encrypt)), nil
 }
 
 // verifyResult 验参

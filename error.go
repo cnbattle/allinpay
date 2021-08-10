@@ -7,4 +7,5 @@ var (
 	VerifyResultError  = errors.New("verify result error")
 	SignError          = errors.New("sign error")
 	GetPrivateKeyError = errors.New("get private key error")
+	EncryptionSIError  = errors.New("encryption sensitive information error")
 )
