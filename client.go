@@ -238,7 +238,10 @@ func (s *Client) verifyResult(jsonStr, sign string) error {
 	shaNew.Write([]byte(sb))
 	sum := shaNew.Sum(nil)
 	err = rsa.VerifyPKCS1v15(rsaPublicKey, crypto.SHA256, sum, encodingSign)
-	return fmt.Errorf("%v: [%w]", err.Error(), VerifyResultError)
+	if err != nil {
+		return fmt.Errorf("%v: [%w]", err.Error(), VerifyResultError)
+	}
+	return nil
 }
 
 // getPrivateKey 获取私钥
