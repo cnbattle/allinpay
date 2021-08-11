@@ -49,10 +49,10 @@ type Client struct {
 	PfxPath      string
 	TLCert       string
 	PfxPwd       string
-	serviceUrl   string
-	notifyUrl    string
-	version      string
-	debug        bool
+	ServiceUrl   string
+	NotifyUrl    string
+	Version      string
+	Debug        bool
 }
 
 func NewAllInPayClient(config Config) *Client {
@@ -87,10 +87,10 @@ func NewAllInPayClient(config Config) *Client {
 		PfxPath:      config.PfxPath,
 		PfxPwd:       config.PfxPwd,
 		TLCert:       config.TLCert,
-		notifyUrl:    config.NotifyUrl,
-		serviceUrl:   serviceUrl,
-		version:      config.Version,
-		debug:        config.Debug,
+		NotifyUrl:    config.NotifyUrl,
+		ServiceUrl:   serviceUrl,
+		Version:      config.Version,
+		Debug:        config.Debug,
 	}
 }
 
@@ -103,21 +103,21 @@ func (s *Client) Request(method string, content map[string]interface{}) (data st
 	}
 	params := map[string]string{}
 	params["appId"] = s.AppID
-	params["notifyUrl"] = s.notifyUrl
+	params["notifyUrl"] = s.NotifyUrl
 	params["method"] = method
 	params["charset"] = "utf-8"
 	params["format"] = "JSON"
 	params["timestamp"] = time.Now().Format("2006-01-02 15:04:05")
-	params["version"] = s.version
+	params["version"] = s.Version
 	params["bizContent"] = string(paramsBytes)
-	sign, err := s.sign(params)
+	sign, err := s.Sign(params)
 	if err != nil {
 		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
 	params["sign"] = sign
 	params["signType"] = "SHA256WithRSA"
 
-	if s.debug {
+	if s.Debug {
 		marshal, _ := json.Marshal(params)
 		log.Println("request:", string(marshal))
 	}
@@ -133,7 +133,7 @@ func (s *Client) Request(method string, content map[string]interface{}) (data st
 			u.Set(k, v)
 		}
 	}
-	resp, err := httpClient.Post(s.serviceUrl, "application/x-www-form-urlencoded;charset=utf-8",
+	resp, err := httpClient.Post(s.ServiceUrl, "application/x-www-form-urlencoded;charset=utf-8",
 		bytes.NewBuffer([]byte(u.Encode())))
 	if err != nil {
 		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
@@ -149,7 +149,7 @@ func (s *Client) Request(method string, content map[string]interface{}) (data st
 		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
 
-	if s.debug {
+	if s.Debug {
 		log.Println("response:", string(body))
 	}
 
@@ -165,15 +165,15 @@ func (s *Client) Request(method string, content map[string]interface{}) (data st
 		panic(err)
 	}
 	delete(result, "sign")
-	err = s.verifyResult(string(resultJsonStr), verifySign.(string))
+	err = s.VerifyResult(string(resultJsonStr), verifySign.(string))
 	if err != nil {
 		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
 	return string(body), nil
 }
 
-// sign 签名
-func (s *Client) sign(params map[string]string) (string, error) {
+// Sign 签名
+func (s *Client) Sign(params map[string]string) (string, error) {
 	delete(params, "signType")
 	var (
 		buf     strings.Builder
@@ -194,7 +194,7 @@ func (s *Client) sign(params map[string]string) (string, error) {
 	h := md5.New()
 	h.Write([]byte(buf.String())[:buf.Len()-1])
 	sb := base64.StdEncoding.EncodeToString(h.Sum(nil))
-	privateKey, err := s.getPrivateKey(s.PfxPath, s.PfxPwd)
+	privateKey, err := s.GetPrivateKey(s.PfxPath, s.PfxPwd)
 	if err != nil {
 		return "", fmt.Errorf("%v: [%w]", err.Error(), SignError)
 	}
@@ -218,8 +218,8 @@ func (s *Client) EncryptionSI(information string) (string, error) {
 	return strings.ToUpper(hex.EncodeToString(encrypt)), nil
 }
 
-// verifyResult 验参
-func (s *Client) verifyResult(jsonStr, sign string) error {
+// VerifyResult 验参
+func (s *Client) VerifyResult(jsonStr, sign string) error {
 	encodingSign, err := base64.StdEncoding.DecodeString(sign)
 	if err != nil {
 		return fmt.Errorf("%v: [%w]", err.Error(), VerifyResultError)
@@ -248,8 +248,8 @@ func (s *Client) verifyResult(jsonStr, sign string) error {
 	return nil
 }
 
-// getPrivateKey 获取私钥
-func (s *Client) getPrivateKey(privateKeyName, privatePassword string) (*rsa.PrivateKey, error) {
+// GetPrivateKey 获取私钥
+func (s *Client) GetPrivateKey(privateKeyName, privatePassword string) (*rsa.PrivateKey, error) {
 	f, err := os.Open(privateKeyName)
 	if err != nil {
 		return nil, fmt.Errorf("%v: [%w]", err.Error(), GetPrivateKeyError)
