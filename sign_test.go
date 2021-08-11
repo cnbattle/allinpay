@@ -21,7 +21,7 @@ func TestClient_sign(t *testing.T) {
 	params["memberType"] = "3"
 	params["source"] = "1"
 
-	sign, err := client.sign(params)
+	sign, err := client.Sign(params)
 	if err != nil {
 		t.Errorf("client.sign error:%s", err)
 	}

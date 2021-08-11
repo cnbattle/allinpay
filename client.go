@@ -97,25 +97,10 @@ func NewAllInPayClient(config Config) *Client {
 var httpClient *http.Client
 
 func (s *Client) Request(method string, content map[string]interface{}) (data string, err error) {
-	paramsBytes, err := json.Marshal(content)
+	params, err := s.BindParams(method, content)
 	if err != nil {
-		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
+		return "", err
 	}
-	params := map[string]string{}
-	params["appId"] = s.AppID
-	params["notifyUrl"] = s.NotifyUrl
-	params["method"] = method
-	params["charset"] = "utf-8"
-	params["format"] = "JSON"
-	params["timestamp"] = time.Now().Format("2006-01-02 15:04:05")
-	params["version"] = s.Version
-	params["bizContent"] = string(paramsBytes)
-	sign, err := s.Sign(params)
-	if err != nil {
-		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
-	}
-	params["sign"] = sign
-	params["signType"] = "SHA256WithRSA"
 
 	if s.Debug {
 		marshal, _ := json.Marshal(params)
@@ -170,6 +155,30 @@ func (s *Client) Request(method string, content map[string]interface{}) (data st
 		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
 	return string(body), nil
+}
+
+// BindParams 构建参数
+func (s *Client) BindParams(method string, content map[string]interface{}) (map[string]string, error) {
+	paramsBytes, err := json.Marshal(content)
+	if err != nil {
+		return nil, fmt.Errorf("%v: [%w]", err.Error(), RequestError)
+	}
+	params := map[string]string{}
+	params["appId"] = s.AppID
+	params["notifyUrl"] = s.NotifyUrl
+	params["method"] = method
+	params["charset"] = "utf-8"
+	params["format"] = "JSON"
+	params["timestamp"] = time.Now().Format("2006-01-02 15:04:05")
+	params["version"] = s.Version
+	params["bizContent"] = string(paramsBytes)
+	sign, err := s.Sign(params)
+	if err != nil {
+		return nil, fmt.Errorf("%v: [%w]", err.Error(), RequestError)
+	}
+	params["sign"] = sign
+	params["signType"] = "SHA256WithRSA"
+	return params, nil
 }
 
 // Sign 签名
