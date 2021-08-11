@@ -38,6 +38,7 @@ type Config struct {
 	PfxPwd       string
 	IsProd       bool
 	Version      string
+	NotifyUrl    string
 	Debug        bool
 }
 
@@ -49,6 +50,7 @@ type Client struct {
 	TLCert       string
 	PfxPwd       string
 	serviceUrl   string
+	notifyUrl    string
 	version      string
 	debug        bool
 }
@@ -85,6 +87,7 @@ func NewAllInPayClient(config Config) *Client {
 		PfxPath:      config.PfxPath,
 		PfxPwd:       config.PfxPwd,
 		TLCert:       config.TLCert,
+		notifyUrl:    config.NotifyUrl,
 		serviceUrl:   serviceUrl,
 		version:      config.Version,
 		debug:        config.Debug,
@@ -100,6 +103,7 @@ func (s *Client) Request(method string, content map[string]interface{}) (data st
 	}
 	params := map[string]string{}
 	params["appId"] = s.AppID
+	params["notifyUrl"] = s.notifyUrl
 	params["method"] = method
 	params["charset"] = "utf-8"
 	params["format"] = "JSON"
