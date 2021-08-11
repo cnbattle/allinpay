@@ -21,7 +21,7 @@ func TestEcbEncrypt(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := AesECBEncrypt(tt.args.data, tt.args.key); !reflect.DeepEqual(hex.EncodeToString(got), tt.want) {
+			if got := AesEcbEncrypt(tt.args.data, tt.args.key); !reflect.DeepEqual(hex.EncodeToString(got), tt.want) {
 				t.Errorf("hex.EncodeToString(EcbEncrypt()) = %v, want %v", hex.EncodeToString(got), tt.want)
 			}
 		})
@@ -47,7 +47,7 @@ func TestEcbDecrypt(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got := AesECBDecrypt(decodeString, tt.args.key); !reflect.DeepEqual(string(got), tt.want) {
+			if got := AesEcbDecrypt(decodeString, tt.args.key); !reflect.DeepEqual(string(got), tt.want) {
 				t.Errorf("string(EcbDecrypt()) = %v, want %v", string(got), tt.want)
 			}
 		})

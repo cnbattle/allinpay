@@ -223,7 +223,7 @@ func (s *Client) EncryptionSI(information string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("%v: [%w]", err.Error(), EncryptionSIError)
 	}
-	encrypt := utils.AesECBEncrypt([]byte(information), key)
+	encrypt := utils.AesEcbEncrypt([]byte(information), key)
 	return strings.ToUpper(hex.EncodeToString(encrypt)), nil
 }
 
