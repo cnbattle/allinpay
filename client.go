@@ -38,6 +38,7 @@ type Config struct {
 	PfxPwd       string
 	IsProd       bool
 	Version      string
+	Debug        bool
 }
 
 type Client struct {
@@ -49,6 +50,7 @@ type Client struct {
 	PfxPwd       string
 	serviceUrl   string
 	version      string
+	debug        bool
 }
 
 func NewAllInPayClient(config Config) *Client {
@@ -85,6 +87,7 @@ func NewAllInPayClient(config Config) *Client {
 		TLCert:       config.TLCert,
 		serviceUrl:   serviceUrl,
 		version:      config.Version,
+		debug:        config.Debug,
 	}
 }
 
@@ -109,6 +112,11 @@ func (s *Client) Request(method string, content map[string]interface{}) (data st
 	}
 	params["sign"] = sign
 	params["signType"] = "SHA256WithRSA"
+
+	if s.debug {
+		marshal, _ := json.Marshal(params)
+		log.Println("request:", string(marshal))
+	}
 
 	var keyList []string
 	for k := range params {
@@ -136,6 +144,11 @@ func (s *Client) Request(method string, content map[string]interface{}) (data st
 	if err != nil {
 		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
+
+	if s.debug {
+		log.Println("response:", string(body))
+	}
+
 	result := map[string]interface{}{}
 	err = json.Unmarshal(body, &result)
 	if err != nil {
