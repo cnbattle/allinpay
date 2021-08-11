@@ -17,7 +17,7 @@ func TestEcbEncrypt(t *testing.T) {
 		want string
 	}{
 		{"test", args{[]byte("cnbattle"), []byte("WaHVZNHZYX3v4si1bBTVseIwEMPMcKzz")}, "222c165839da6c857d164dd45d975716"},
-		{"test", args{[]byte("allin"), []byte("WaHVZNHZYX3v4si1bBTVseIwEMPMcKzz")}, "2cd39b5edb9de7dbd7caafc4951e27f5"},
+		{"test2", args{[]byte("allin"), []byte("WaHVZNHZYX3v4si1bBTVseIwEMPMcKzz")}, "2cd39b5edb9de7dbd7caafc4951e27f5"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -39,7 +39,7 @@ func TestEcbDecrypt(t *testing.T) {
 		want string
 	}{
 		{"test", args{"222c165839da6c857d164dd45d975716", []byte("WaHVZNHZYX3v4si1bBTVseIwEMPMcKzz")}, "cnbattle"},
-		{"test", args{"2cd39b5edb9de7dbd7caafc4951e27f5", []byte("WaHVZNHZYX3v4si1bBTVseIwEMPMcKzz")}, "allin"},
+		{"test2", args{"2cd39b5edb9de7dbd7caafc4951e27f5", []byte("WaHVZNHZYX3v4si1bBTVseIwEMPMcKzz")}, "allin"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
