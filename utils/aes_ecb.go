@@ -5,8 +5,8 @@ import (
 	"crypto/aes"
 )
 
-// EcbDecrypt 解密
-func EcbDecrypt(data, key []byte) []byte {
+// AesECBDecrypt 解密
+func AesECBDecrypt(data, key []byte) []byte {
 	block, _ := aes.NewCipher(key)
 	decrypted := make([]byte, len(data))
 	size := block.BlockSize()
@@ -16,8 +16,8 @@ func EcbDecrypt(data, key []byte) []byte {
 	return PKCS5UnPadding(decrypted)
 }
 
-// EcbEncrypt 加密
-func EcbEncrypt(data, key []byte) []byte {
+// AesECBEncrypt 加密
+func AesECBEncrypt(data, key []byte) []byte {
 	block, _ := aes.NewCipher(key)
 	data = PKCS5Padding(data, block.BlockSize())
 	decrypted := make([]byte, len(data))
