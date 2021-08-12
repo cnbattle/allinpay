@@ -19,6 +19,7 @@ func main() {
 		TLCert:       "./TLCert-test.cer",
 		PfxPwd:       "123456",
 		IsProd:       false,
+		Debug:        true,
 	})
 	params := map[string]interface{}{}
 	params["bizUserId"] = "golang-test-1"
