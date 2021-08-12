@@ -142,7 +142,6 @@ func (s *Client) Request(method string, content map[string]interface{}) (data st
 	if err != nil {
 		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
-	delete(result, "sign")
 	err = s.VerifyResult(string(resultJsonStr), verifySign.(string))
 	if err != nil {
 		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
