@@ -43,16 +43,8 @@ type Config struct {
 }
 
 type Client struct {
-	AppID        string
-	AppSecretKey string
-	AppAccountID string
-	PfxPath      string
-	TLCert       string
-	PfxPwd       string
-	ServiceUrl   string
-	NotifyUrl    string
-	Version      string
-	Debug        bool
+	Config
+	ServiceUrl string
 }
 
 func NewAllInPayClient(config Config) *Client {
@@ -79,23 +71,24 @@ func NewAllInPayClient(config Config) *Client {
 	if len(config.Version) == 0 {
 		config.Version = "1.0"
 	}
-
-	return &Client{
-		AppID:        config.AppID,
-		AppSecretKey: config.AppSecretKey,
-		AppAccountID: config.AppAccountID,
-		PfxPath:      config.PfxPath,
-		PfxPwd:       config.PfxPwd,
-		TLCert:       config.TLCert,
-		NotifyUrl:    config.NotifyUrl,
-		ServiceUrl:   serviceUrl,
-		Version:      config.Version,
-		Debug:        config.Debug,
-	}
+	var client Client
+	client.AppID = config.AppID
+	client.AppSecretKey = config.AppSecretKey
+	client.AppAccountID = config.AppAccountID
+	client.PfxPath = config.PfxPath
+	client.PfxPwd = config.PfxPwd
+	client.TLCert = config.TLCert
+	client.NotifyUrl = config.NotifyUrl
+	client.IsProd = config.IsProd
+	client.ServiceUrl = serviceUrl
+	client.Version = config.Version
+	client.Debug = config.Debug
+	return &client
 }
 
 var httpClient *http.Client
 
+// Request 统一请求验签处理
 func (s *Client) Request(method string, content map[string]interface{}) (data string, err error) {
 	params, err := s.BindParams(method, content)
 	if err != nil {
@@ -118,8 +111,8 @@ func (s *Client) Request(method string, content map[string]interface{}) (data st
 			u.Set(k, v)
 		}
 	}
-	resp, err := httpClient.Post(s.ServiceUrl, "application/x-www-form-urlencoded;charset=utf-8",
-		bytes.NewBuffer([]byte(u.Encode())))
+	resp, err := httpClient.Post(s.ServiceUrl,
+		"application/x-www-form-urlencoded;charset=utf-8", bytes.NewBuffer([]byte(u.Encode())))
 	if err != nil {
 		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
@@ -147,7 +140,7 @@ func (s *Client) Request(method string, content map[string]interface{}) (data st
 	delete(result, "sign")
 	resultJsonStr, err := json.Marshal(result)
 	if err != nil {
-		panic(err)
+		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
 	}
 	delete(result, "sign")
 	err = s.VerifyResult(string(resultJsonStr), verifySign.(string))
