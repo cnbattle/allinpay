@@ -149,6 +149,52 @@ func (s *Client) Request(method string, content map[string]interface{}) (data st
 	return string(body), nil
 }
 
+// RequestOnly 仅请求处理
+func (s *Client) RequestOnly(method string, content map[string]interface{}) (data string, err error) {
+	params, err := s.BindParams(method, content)
+	if err != nil {
+		return "", err
+	}
+
+	if s.Debug {
+		marshal, _ := json.Marshal(params)
+		log.Println("request:", string(marshal))
+	}
+
+	var keyList []string
+	for k := range params {
+		keyList = append(keyList, k)
+	}
+	u := url.Values{}
+	sort.Strings(keyList)
+	for _, k := range keyList {
+		if v, ok := params[k]; ok && len(v) > 0 {
+			u.Set(k, v)
+		}
+	}
+	resp, err := httpClient.Post(s.ServiceUrl,
+		"application/x-www-form-urlencoded;charset=utf-8", bytes.NewBuffer([]byte(u.Encode())))
+	if err != nil {
+		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Println("Body.Close() err:" + err.Error())
+		}
+	}(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("%v: [%w]", err.Error(), RequestError)
+	}
+
+	if s.Debug {
+		log.Println("response:", string(body))
+	}
+
+	return string(body), nil
+}
+
 // BindParams 构建参数
 func (s *Client) BindParams(method string, content map[string]interface{}) (map[string]string, error) {
 	paramsBytes, err := json.Marshal(content)
