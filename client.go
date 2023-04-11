@@ -64,9 +64,9 @@ func NewAllInPayClient(config Config) *Client {
 			},
 		}
 	}
-	serviceUrl := "http://test.allinpay.com/op/gateway"
+	serviceUrl := "http://test.allinpay.com/open/gateway"
 	if config.IsProd {
-		serviceUrl = "https://cloud.allinpay.com/gateway"
+		serviceUrl = "https://open.allinpay.com/gateway"
 	}
 	if len(config.Version) == 0 {
 		config.Version = "1.0"
